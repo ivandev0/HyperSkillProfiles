@@ -50,10 +50,12 @@ class MainActivity : ComponentActivity() {
 fun DefaultPreview() {
     val url = "https://ucarecdn.com/efff3079-1b03-4f5c-bbf2-dd2a8d9d49e5/-/crop/1706x1707/436,0/-/preview/"
     ProfileInfo(user = HyperSkillUser(
-        123, "Vladimir Klimov", url,
+        123, "Vladimir Klimov",
+        avatarUrl = url,
         bio = "Product Data Analyst, Bioinformatist, Zoologist, Molecular Biologist",
         country = "RU",
-        languages = listOf("ru", "en")
+        languages = listOf("ru", "en"),
+        stats = HyperSkillUserStats(6, 0, 6)
     ))
 }
 
@@ -66,11 +68,10 @@ fun ProfileInfo(user: HyperSkillUser) {
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .fillMaxSize(),
-                //verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ProfileHeader(user, this@BoxWithConstraints.maxHeight * 0.4f)
-                StatsBlock(stats = HyperSkillUserStats(6, 0, 6))
+                StatsBlock(stats = user.stats)
                 BioBlock(user = user)
 
                 BoxRowWithContent {
