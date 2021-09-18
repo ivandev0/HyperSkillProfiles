@@ -11,14 +11,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -27,6 +29,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import org.jetbrains.hyperskill.model.HyperSkillUser
@@ -35,12 +43,62 @@ import org.jetbrains.hyperskill.network.ApiService
 import org.jetbrains.hyperskill.ui.theme.HyperskillProfilesTheme
 import java.util.*
 
+@ExperimentalCoilApi
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            ProfileInfo(ApiService.getUserData("154876"))
-//            Text(ApiService.login("", ""))
+            val navController = rememberNavController()
+            NavHost(navController = navController, startDestination = "login") {
+                composable("login") {
+                    LoginPage(navController)
+                }
+                composable(
+                    "profile/{userId}",
+                    arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                ) { ProfileInfo(ApiService.getUserData(it.arguments!!.getString("userId")!!)) }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun LoginPage(navController: NavController = rememberNavController()) {
+    HyperskillProfilesTheme {
+        BoxWithConstraints(modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0,123,255))
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
+            ) {
+                Image(
+                    bitmap = ImageBitmap.imageResource(id = R.drawable.hyperskill),
+                    contentDescription = "HyperSkill logo",
+                    modifier = Modifier.size(300.dp)
+                )
+                val email = remember { mutableStateOf("") }
+                val password = remember { mutableStateOf("") }
+                OutlinedTextField(
+                    value = email.value,
+                    label = { Text(text = "Enter Email") },
+                    onValueChange = { email.value = it }
+                )
+                Spacer(Modifier.size(16.dp))
+                OutlinedTextField(
+                    value = password.value,
+                    label = { Text(text = "Enter Password") },
+                    onValueChange = { password.value = it }
+                )
+                Spacer(Modifier.size(16.dp))
+                Button(onClick = {
+                    val id = ApiService.login(email.value, password.value)
+                    navController.navigate("profile/$id")
+                }) { Text(text = "Login", color = Color.Black) }
+            }
         }
     }
 }
@@ -63,7 +121,9 @@ fun DefaultPreview() {
 @Composable
 fun ProfileInfo(user: HyperSkillUser) {
     HyperskillProfilesTheme {
-        BoxWithConstraints(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
+        BoxWithConstraints(modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colors.background)) {
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())

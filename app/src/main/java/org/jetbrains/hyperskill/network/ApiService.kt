@@ -5,6 +5,7 @@ import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.hyperskill.model.HyperSkillUser
 import org.jetbrains.hyperskill.model.HyperSkillUserStats
@@ -44,41 +45,41 @@ object ApiService {
         }
     }
 
-    private fun getCookies(): Map<String, String> {
-        return runBlocking {
-            val response = HttpClient().use { httpClient ->
-                httpClient.get<HttpResponse>(hyperSkillUrl + "login?next=%2Ftracks").headers["set-cookie"]
-            }
-
-            response!!.split(";").map {
-                val cookie = it.split("=")
-                cookie[0] to cookie[1]
-            }.toMap()
+    private suspend fun getCookies(): Map<String, String> {
+        val response = HttpClient().use { httpClient ->
+            httpClient.get<HttpResponse>(hyperSkillUrl + "login?next=%2Ftracks").headers["set-cookie"]
         }
+
+        // TODO add cookie with all properties
+        return response!!.split(";").map {
+            val cookie = it.split("=")
+            cookie[0] to cookie[1]
+        }.toMap()
     }
 
-    private fun getBadgesCount(id: String): Int {
-        return runBlocking {
-            val response = HttpClient().use { httpClient ->
-                httpClient.get<String>(hyperSkillApiUrl + "badges?user=$id")
-            }
-
-            JSONObject(response).getJSONArray("badges").length()
+    private suspend fun getBadgesCount(id: String): Int {
+        val response = HttpClient().use { httpClient ->
+            httpClient.get<String>(hyperSkillApiUrl + "badges?user=$id")
         }
+
+        return JSONObject(response).getJSONArray("badges").length()
     }
 
     fun login(email: String, password: String): String {
-        val cookies = getCookies().filter { it.key == "csrftoken" }
-
         return runBlocking {
+            val cookies = getCookies().filter { it.key == "csrftoken" }
+
             HttpClient().use { httpClient ->
-                httpClient.post<HttpResponse>(hyperSkillApiUrl + "profiles/login") {
+                val response = httpClient.post<String>(hyperSkillApiUrl + "profiles/login") {
                     contentType(ContentType.Application.Json)
                     body = "{\"email\":\"$email\",\"password\":\"$password\"}"
                     cookies.forEach { cookie(it.key, it.value) }
-                    header("referer", "https://hyperskill.org/login?next=%2Ftracks")
+                    header("referer", hyperSkillUrl + "login?next=%2Ftracks")
                     header("x-csrftoken", cookies.values.single())
-                }.receive()
+                }
+
+                // TODO handle error
+                JSONObject(response).getJSONArray("profiles").getJSONObject(0).getString("id")
             }
         }
     }
