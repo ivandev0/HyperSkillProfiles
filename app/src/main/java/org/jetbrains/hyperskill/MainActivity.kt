@@ -20,12 +20,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.annotation.ExperimentalCoilApi
@@ -34,13 +33,14 @@ import org.jetbrains.hyperskill.model.HyperSkillUser
 import org.jetbrains.hyperskill.model.HyperSkillUserStats
 import org.jetbrains.hyperskill.network.ApiService
 import org.jetbrains.hyperskill.ui.theme.HyperskillProfilesTheme
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            //ProfileInfo(ApiService.getUserData("1283850"))
-            Text(ApiService.login())
+            ProfileInfo(ApiService.getUserData("154876"))
+//            Text(ApiService.login("", ""))
         }
     }
 }
@@ -49,14 +49,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun DefaultPreview() {
     val url = "https://ucarecdn.com/efff3079-1b03-4f5c-bbf2-dd2a8d9d49e5/-/crop/1706x1707/436,0/-/preview/"
-    ProfileInfo(user = HyperSkillUser(123, "Vladimir Klimov", url))
+    ProfileInfo(user = HyperSkillUser(
+        123, "Vladimir Klimov", url,
+        bio = "Product Data Analyst, Bioinformatist, Zoologist, Molecular Biologist",
+        country = "RU",
+        languages = listOf("ru", "en")
+    ))
 }
 
 @ExperimentalCoilApi
 @Composable
 fun ProfileInfo(user: HyperSkillUser) {
     HyperskillProfilesTheme {
-        BoxWithConstraints(modifier = Modifier.background(MaterialTheme.colors.background)) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().background(MaterialTheme.colors.background)) {
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
@@ -66,16 +71,11 @@ fun ProfileInfo(user: HyperSkillUser) {
             ) {
                 ProfileHeader(user, this@BoxWithConstraints.maxHeight * 0.4f)
                 StatsBlock(stats = HyperSkillUserStats(6, 0, 6))
-                BoxRowWithContent {
-                    Text(text = "Row")
-                }
+                BioBlock(user = user)
 
                 BoxRowWithContent {
                     Text(text = "Row")
                 }
-
-                Row(modifier = Modifier.height(100.dp)) { Text(text = "Row") }
-
             }
         }
     }
@@ -129,7 +129,9 @@ fun StatsBlock(stats: HyperSkillUserStats) {
                 horizontalArrangement = Arrangement.Center
             ) {
                 Icon(
-                    modifier = Modifier.size(40.dp).padding(5.dp),
+                    modifier = Modifier
+                        .size(40.dp)
+                        .padding(5.dp),
                     painter = painterResource(id = image),
                     contentDescription = name
                 )
@@ -177,7 +179,7 @@ inline fun BoxRowWithContent(content: @Composable BoxScope.() -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .offset(y = (-50).dp)
-            .height(100.dp),
+            .fillMaxHeight(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
@@ -193,4 +195,48 @@ inline fun BoxRowWithContent(content: @Composable BoxScope.() -> Unit) {
     }
 }
 
+@Composable
+fun BioBlock(user: HyperSkillUser) {
+    val enLocale = Locale("en")
+    val modifierWithPadding = Modifier.padding(bottom = 6.dp)
 
+    BoxRowWithContent {
+        Column {
+            if (user.country != null) {
+                val country = Locale("", user.country).getDisplayCountry(enLocale)
+                Text(text = "Lives in $country", modifier = Modifier.padding(bottom = 4.dp))
+            }
+
+            if (user.languages != null) {
+                Text(
+                    text = "Speaks " + user.languages.joinToString { Locale(it).getDisplayLanguage(enLocale) },
+                    modifier = modifierWithPadding
+                )
+            }
+
+            if (user.bio != null) {
+                Text(text = "Bio", fontWeight = FontWeight.Bold, modifier = modifierWithPadding)
+                Text(text = user.bio, modifier = modifierWithPadding)
+            } else {
+                Text(
+                    text = "Share something about yourself",
+                    modifier = modifierWithPadding,
+                    fontStyle = FontStyle.Italic,
+                    color = Color.Gray
+                )
+            }
+
+            if (user.experience != null) {
+                Text(text = "Experience", fontWeight = FontWeight.Bold, modifier = modifierWithPadding)
+                Text(text = user.experience, modifier = modifierWithPadding)
+            } else {
+                Text(
+                    text = "Share something about your experience",
+                    modifier = modifierWithPadding,
+                    fontStyle = FontStyle.Italic,
+                    color = Color.Gray
+                )
+            }
+        }
+    }
+}

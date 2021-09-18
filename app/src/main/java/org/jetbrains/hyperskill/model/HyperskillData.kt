@@ -5,6 +5,7 @@ data class HyperSkillUser(
     val name: String,
     val avatarUrl: String,
     val bio: String? = null,
+    val experience: String? = null,
     val country: String? = null,
     val languages: List<String>? = null
 )
