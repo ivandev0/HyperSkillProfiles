@@ -17,10 +17,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -46,6 +48,7 @@ import org.jetbrains.hyperskill.network.ResponseResult
 import org.jetbrains.hyperskill.ui.theme.*
 import java.util.*
 
+@ExperimentalComposeUiApi
 @ExperimentalCoilApi
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,8 +68,10 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@ExperimentalComposeUiApi
 @Composable
 fun LoginPage(navController: NavController) {
+    val keyboardController = LocalSoftwareKeyboardController.current
     HyperskillProfilesTheme {
         BoxWithConstraints(modifier = Modifier
             .fillMaxSize()
@@ -143,6 +148,7 @@ fun LoginPage(navController: NavController) {
                             else -> {
                                 passwordErrorState.value = false
                                 emailErrorState.value = false
+                                keyboardController?.hide()
                                 when (val result = ApiService.login(email.value, password.value)) {
                                     is ResponseResult.Success -> navController.navigate("profile/${result.info}")
                                     is ResponseResult.Failure -> error.value = result.errorMessage
