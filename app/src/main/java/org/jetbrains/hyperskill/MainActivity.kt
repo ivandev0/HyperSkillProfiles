@@ -10,6 +10,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,6 +25,8 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -37,6 +42,7 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import org.jetbrains.hyperskill.model.*
 import org.jetbrains.hyperskill.network.ApiService
+import org.jetbrains.hyperskill.network.ResponseResult
 import org.jetbrains.hyperskill.ui.theme.*
 import java.util.*
 
@@ -60,39 +66,92 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun LoginPage(navController: NavController = rememberNavController()) {
+fun LoginPage(navController: NavController) {
     HyperskillProfilesTheme {
         BoxWithConstraints(modifier = Modifier
             .fillMaxSize()
-            .background(LightBlue)) {
+            .background(Color.White)) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
                 Image(
-                    bitmap = ImageBitmap.imageResource(id = R.drawable.hyperskill),
+                    bitmap = ImageBitmap.imageResource(id = R.drawable.academy),
                     contentDescription = "HyperSkill logo",
                     modifier = Modifier.size(300.dp)
                 )
                 val email = remember { mutableStateOf("") }
                 val password = remember { mutableStateOf("") }
+                val error = remember { mutableStateOf("") }
+                val emailErrorState = remember { mutableStateOf(false) }
+                val passwordErrorState = remember { mutableStateOf(false) }
+                val passwordVisibility = remember { mutableStateOf(true) }
+
                 OutlinedTextField(
                     value = email.value,
                     label = { Text(text = "Enter Email") },
-                    onValueChange = { email.value = it }
+                    isError = emailErrorState.value,
+                    shape = MaterialTheme.shapes.medium,
+                    onValueChange = {
+                        emailErrorState.value = false
+                        email.value = it
+                    }
                 )
+                if (emailErrorState.value) Text(text = "Required", color = Color.Red)
                 DefaultSpacer()
+
                 OutlinedTextField(
                     value = password.value,
                     label = { Text(text = "Enter Password") },
-                    onValueChange = { password.value = it }
+                    isError = passwordErrorState.value,
+                    shape = MaterialTheme.shapes.medium,
+                    onValueChange = {
+                        passwordErrorState.value = false
+                        password.value = it
+                    },
+                    visualTransformation = when {
+                        passwordVisibility.value -> PasswordVisualTransformation()
+                        else -> VisualTransformation.None
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = {
+                            passwordVisibility.value = !passwordVisibility.value
+                        }) {
+                            Icon(
+                                imageVector = when {
+                                    passwordVisibility.value -> Icons.Default.VisibilityOff
+                                    else -> Icons.Default.Visibility
+                                },
+                                contentDescription = "visibility",
+                                tint = Color.Black
+                            )
+                        }
+                    }
                 )
+                if (passwordErrorState.value) Text(text = "Required", color = Color.Red)
                 DefaultSpacer()
-                Button(onClick = {
-                    val id = ApiService.login(email.value, password.value)
-                    navController.navigate("profile/$id")
-                }) { Text(text = "Login", color = Color.Black) }
+
+                Button(
+                    shape = MaterialTheme.shapes.small,
+                    onClick = {
+                        when {
+                            email.value.isEmpty() -> emailErrorState.value = true
+                            password.value.isEmpty() -> passwordErrorState.value = true
+                            else -> {
+                                passwordErrorState.value = false
+                                emailErrorState.value = false
+                                when (val result = ApiService.login(email.value, password.value)) {
+                                    is ResponseResult.Success -> navController.navigate("profile/${result.info}")
+                                    is ResponseResult.Failure -> error.value = result.errorMessage
+                                }
+                            }
+                        }
+                    }
+                ) { Text(text = "Login", color = Color.White) }
+                DefaultSpacer()
+
+                Text(text = error.value, color = Color.Red)
             }
         }
     }
@@ -165,7 +224,7 @@ fun StatsBlock(stats: HyperSkillUserStats) {
                 .fillMaxSize()
                 .weight(1f)
                 .padding(start = if (leftPadding) 10.dp else 0.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.medium)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
@@ -225,7 +284,7 @@ inline fun BoxRowWithContent(content: @Composable BoxScope.() -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.medium)
                 .background(Color.White),
             content = content
         )
@@ -300,7 +359,7 @@ fun ProjectsBlock(projects: List<HyperSkillProject>) {
                 .width(300.dp)
                 .fillMaxHeight()
                 .padding(end = 10.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.medium)
                 .background(GrayishWhite),
             contentAlignment = Alignment.Center
         ) {

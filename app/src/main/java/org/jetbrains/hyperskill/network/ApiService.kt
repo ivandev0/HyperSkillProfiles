@@ -14,6 +14,7 @@ import org.json.JSONObject
 object ApiService {
     private const val hyperSkillUrl = "https://hyperskill.org/"
     private const val hyperSkillApiUrl = "${hyperSkillUrl}api/"
+    private const val hyperSkillLoginUrl = hyperSkillUrl + "login?next=%2Ftracks"
 
     private fun JSONArray.toList(): List<String> {
         return (0 until this.length()).map { this.getString(it) }
@@ -45,7 +46,7 @@ object ApiService {
 
     private suspend fun getCookies(): Map<String, String> {
         val response = HttpClient().use { httpClient ->
-            httpClient.get<HttpResponse>(hyperSkillUrl + "login?next=%2Ftracks").headers["set-cookie"]
+            httpClient.get<HttpResponse>(hyperSkillLoginUrl).headers["set-cookie"]
         }
 
         // TODO add cookie with all properties
@@ -63,21 +64,28 @@ object ApiService {
         return JSONObject(response).getJSONArray("badges").length()
     }
 
-    fun login(email: String, password: String): String {
+    fun login(email: String, password: String): ResponseResult {
         return runBlocking {
             val cookies = getCookies().filter { it.key == "csrftoken" }
 
             HttpClient().use { httpClient ->
-                val response = httpClient.post<String>(hyperSkillApiUrl + "profiles/login") {
-                    contentType(ContentType.Application.Json)
-                    body = "{\"email\":\"$email\",\"password\":\"$password\"}"
-                    cookies.forEach { cookie(it.key, it.value) }
-                    header("referer", hyperSkillUrl + "login?next=%2Ftracks")
-                    header("x-csrftoken", cookies.values.single())
-                }
+                try {
+                    val response = httpClient.post<String>(hyperSkillApiUrl + "profiles/login") {
+                        contentType(ContentType.Application.Json)
+                        body = "{\"email\":\"$email\",\"password\":\"$password\"}"
+                        cookies.forEach { cookie(it.key, it.value) }
+                        header("referer", hyperSkillLoginUrl)
+                        header("x-csrftoken", cookies.values.single())
+                    }
 
-                // TODO handle error
-                JSONObject(response).getJSONArray("profiles").getJSONObject(0).getString("id")
+                    val id = JSONObject(response)
+                        .getJSONArray("profiles")
+                        .getJSONObject(0)
+                        .getString("id")
+                    ResponseResult.Success(id)
+                } catch (e: Exception) {
+                    ResponseResult.Failure(e.message.toString())
+                }
             }
         }
     }
