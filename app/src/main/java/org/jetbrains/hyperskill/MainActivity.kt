@@ -4,13 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -37,8 +36,10 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
+import org.jetbrains.hyperskill.model.HyperSkillProject
 import org.jetbrains.hyperskill.model.HyperSkillUser
 import org.jetbrains.hyperskill.model.HyperSkillUserStats
+import org.jetbrains.hyperskill.model.simpleProject
 import org.jetbrains.hyperskill.network.ApiService
 import org.jetbrains.hyperskill.ui.theme.HyperskillProfilesTheme
 import java.util.*
@@ -62,13 +63,13 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Preview(showBackground = true)
+//@Preview(showBackground = true)
 @Composable
 fun LoginPage(navController: NavController = rememberNavController()) {
     HyperskillProfilesTheme {
         BoxWithConstraints(modifier = Modifier
             .fillMaxSize()
-            .background(Color(0,123,255))
+            .background(Color(0, 123, 255))
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -123,7 +124,8 @@ fun ProfileInfo(user: HyperSkillUser) {
     HyperskillProfilesTheme {
         BoxWithConstraints(modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colors.background)) {
+            .background(MaterialTheme.colors.background)
+        ) {
             Column(
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
@@ -134,9 +136,7 @@ fun ProfileInfo(user: HyperSkillUser) {
                 StatsBlock(stats = user.stats)
                 BioBlock(user = user)
 
-                BoxRowWithContent {
-                    Text(text = "Row")
-                }
+                ProjectsBlock(listOf(simpleProject, simpleProject))
             }
         }
     }
@@ -299,5 +299,71 @@ fun BioBlock(user: HyperSkillUser) {
                 )
             }
         }
+    }
+}
+
+@Composable
+fun ProjectsBlock(projects: List<HyperSkillProject>) {
+    @Composable
+    fun DrawIcon(@DrawableRes id: Int) {
+        Image(
+            modifier = Modifier
+                .size(25.dp)
+                .padding(5.dp),
+            painter = painterResource(id = id),
+            contentDescription = null,
+        )
+    }
+
+    @Composable
+    fun Block(project: HyperSkillProject) {
+        Box(
+            modifier = Modifier
+                .width(300.dp)
+                .fillMaxHeight()
+                .padding(end = 10.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(245,247,255)),
+            contentAlignment = Alignment.Center
+        ) {
+            Column {
+                Row {
+                    DrawIcon(id = project.level.imageId)
+                    Text(text = project.name)
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+
+                Row {
+                    Text(text = project.description)
+                }
+                Spacer(modifier = Modifier.size(16.dp))
+
+                Row {
+                    DrawIcon(id = R.drawable.ic_star_icon)
+                    Text(text = project.rating.toString())
+                    DrawIcon(id = R.drawable.ic_easy_icon)
+                    Text(text = project.level.name)
+                    DrawIcon(id = R.drawable.ic_hour_icon)
+                    Text(text = "${project.rating} hours")
+                    DrawIcon(id = R.drawable.ic_book_icon)
+                    Text(text = "${project.topicsToLearn} topics")
+                }
+            }
+        }
+    }
+
+    if (projects.isEmpty()) return
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth(fraction = 0.9f)
+            .offset(y = (-50).dp)
+            .height(150.dp)
+            .padding(top = 5.dp, bottom = 5.dp),
+        state = rememberLazyListState(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        items(projects.size) { Block(projects[it]) }
     }
 }
