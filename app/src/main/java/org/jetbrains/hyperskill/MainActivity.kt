@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -36,12 +35,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
-import org.jetbrains.hyperskill.model.HyperSkillProject
-import org.jetbrains.hyperskill.model.HyperSkillUser
-import org.jetbrains.hyperskill.model.HyperSkillUserStats
-import org.jetbrains.hyperskill.model.simpleProject
+import org.jetbrains.hyperskill.model.*
 import org.jetbrains.hyperskill.network.ApiService
-import org.jetbrains.hyperskill.ui.theme.HyperskillProfilesTheme
+import org.jetbrains.hyperskill.ui.theme.*
 import java.util.*
 
 @ExperimentalCoilApi
@@ -63,14 +59,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-//@Preview(showBackground = true)
 @Composable
 fun LoginPage(navController: NavController = rememberNavController()) {
     HyperskillProfilesTheme {
         BoxWithConstraints(modifier = Modifier
             .fillMaxSize()
-            .background(Color(0, 123, 255))
-        ) {
+            .background(LightBlue)) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -88,13 +82,13 @@ fun LoginPage(navController: NavController = rememberNavController()) {
                     label = { Text(text = "Enter Email") },
                     onValueChange = { email.value = it }
                 )
-                Spacer(Modifier.size(16.dp))
+                DefaultSpacer()
                 OutlinedTextField(
                     value = password.value,
                     label = { Text(text = "Enter Password") },
                     onValueChange = { password.value = it }
                 )
-                Spacer(Modifier.size(16.dp))
+                DefaultSpacer()
                 Button(onClick = {
                     val id = ApiService.login(email.value, password.value)
                     navController.navigate("profile/$id")
@@ -104,38 +98,31 @@ fun LoginPage(navController: NavController = rememberNavController()) {
     }
 }
 
+@ExperimentalCoilApi
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    val url = "https://ucarecdn.com/efff3079-1b03-4f5c-bbf2-dd2a8d9d49e5/-/crop/1706x1707/436,0/-/preview/"
-    ProfileInfo(user = HyperSkillUser(
-        123, "Vladimir Klimov",
-        avatarUrl = url,
-        bio = "Product Data Analyst, Bioinformatist, Zoologist, Molecular Biologist",
-        country = "RU",
-        languages = listOf("ru", "en"),
-        stats = HyperSkillUserStats(6, 0, 6)
-    ))
+    ProfileInfo(user = simpleUser)
 }
 
 @ExperimentalCoilApi
 @Composable
 fun ProfileInfo(user: HyperSkillUser) {
     HyperskillProfilesTheme {
-        BoxWithConstraints(modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colors.background)
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colors.background)
         ) {
             Column(
                 modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 ProfileHeader(user, this@BoxWithConstraints.maxHeight * 0.4f)
                 StatsBlock(stats = user.stats)
                 BioBlock(user = user)
-
                 ProjectsBlock(listOf(simpleProject, simpleProject))
             }
         }
@@ -145,12 +132,11 @@ fun ProfileInfo(user: HyperSkillUser) {
 @ExperimentalCoilApi
 @Composable
 fun ProfileHeader(user: HyperSkillUser, height: Dp) {
-    val blueBackground = Color(12, 24, 159)
     Column(
         modifier = Modifier
-            .background(color = blueBackground)
+            .fillMaxWidth()
             .height(height)
-            .fillMaxWidth(),
+            .background(color = CustomBlue),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -162,7 +148,7 @@ fun ProfileHeader(user: HyperSkillUser, height: Dp) {
                 .clip(CircleShape)
         )
         Text(
-            user.name,
+            text = user.name,
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center,
             color = Color.White,
@@ -174,13 +160,12 @@ fun ProfileHeader(user: HyperSkillUser, height: Dp) {
 fun StatsBlock(stats: HyperSkillUserStats) {
     @Composable
     fun RowScope.Block(@DrawableRes image: Int, count: Int, name: String, leftPadding: Boolean) {
-        val textColor = Color(139, 145, 159)
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(1f)
                 .padding(start = if (leftPadding) 10.dp else 0.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .clip(MaterialTheme.shapes.small)
                 .background(Color.White),
             contentAlignment = Alignment.Center
         ) {
@@ -198,18 +183,14 @@ fun StatsBlock(stats: HyperSkillUserStats) {
                 )
                 Column {
                     Text(text = count.toString())
-                    Text(text = name, fontSize = 12.sp, color = textColor)
+                    Text(text = name, fontSize = 12.sp, color = CustomGray)
                 }
             }
         }
     }
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth(fraction = 0.9f)
-            .offset(y = (-50).dp)
-            .height(100.dp)
-            .padding(top = 5.dp, bottom = 5.dp),
+        modifier = defaultRowModifier.height(100.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
@@ -237,19 +218,14 @@ fun StatsBlock(stats: HyperSkillUserStats) {
 @Composable
 inline fun BoxRowWithContent(content: @Composable BoxScope.() -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .offset(y = (-50).dp)
-            .fillMaxHeight(),
+        modifier = defaultRowModifier.fillMaxHeight(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth(fraction = 0.9f)
-                .fillMaxHeight()
-                .padding(top = 5.dp, bottom = 5.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.small)
                 .background(Color.White),
             content = content
         )
@@ -304,6 +280,8 @@ fun BioBlock(user: HyperSkillUser) {
 
 @Composable
 fun ProjectsBlock(projects: List<HyperSkillProject>) {
+    if (projects.isEmpty()) return
+
     @Composable
     fun DrawIcon(@DrawableRes id: Int) {
         Image(
@@ -322,8 +300,8 @@ fun ProjectsBlock(projects: List<HyperSkillProject>) {
                 .width(300.dp)
                 .fillMaxHeight()
                 .padding(end = 10.dp)
-                .clip(RoundedCornerShape(10.dp))
-                .background(Color(245,247,255)),
+                .clip(MaterialTheme.shapes.small)
+                .background(GrayishWhite),
             contentAlignment = Alignment.Center
         ) {
             Column {
@@ -331,12 +309,12 @@ fun ProjectsBlock(projects: List<HyperSkillProject>) {
                     DrawIcon(id = project.level.imageId)
                     Text(text = project.name)
                 }
-                Spacer(modifier = Modifier.size(16.dp))
+                DefaultSpacer()
 
                 Row {
                     Text(text = project.description)
                 }
-                Spacer(modifier = Modifier.size(16.dp))
+                DefaultSpacer()
 
                 Row {
                     DrawIcon(id = R.drawable.ic_star_icon)
@@ -352,14 +330,8 @@ fun ProjectsBlock(projects: List<HyperSkillProject>) {
         }
     }
 
-    if (projects.isEmpty()) return
-
     LazyRow(
-        modifier = Modifier
-            .fillMaxWidth(fraction = 0.9f)
-            .offset(y = (-50).dp)
-            .height(150.dp)
-            .padding(top = 5.dp, bottom = 5.dp),
+        modifier = defaultRowModifier.height(150.dp),
         state = rememberLazyListState(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
