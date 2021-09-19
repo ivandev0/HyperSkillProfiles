@@ -79,7 +79,9 @@ fun LoginPage(navController: NavController) {
                 Image(
                     bitmap = ImageBitmap.imageResource(id = R.drawable.academy),
                     contentDescription = "HyperSkill logo",
-                    modifier = Modifier.size(300.dp)
+                    modifier = Modifier
+                        .width(300.dp)
+                        .height(200.dp)
                 )
                 val email = remember { mutableStateOf("") }
                 val password = remember { mutableStateOf("") }

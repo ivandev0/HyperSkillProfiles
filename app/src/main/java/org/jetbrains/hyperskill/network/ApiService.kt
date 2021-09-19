@@ -61,7 +61,10 @@ object ApiService {
             httpClient.get<String>(hyperSkillApiUrl + "badges?user=$id")
         }
 
-        return JSONObject(response).getJSONArray("badges").length()
+        val badges = JSONObject(response).getJSONArray("badges")
+        return (0 until badges.length()).count {
+            badges.getJSONObject(it).getInt("level") != 0
+        }
     }
 
     fun login(email: String, password: String): ResponseResult {
